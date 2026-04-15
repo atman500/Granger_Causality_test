@@ -32,48 +32,28 @@ Interest_Rate=ts(Interest_Rate,frequency = 365,start = c(2000,1))
 Exchange_Rate=ts(Exchange_Rate,frequency = 365,start = c(2000,1))
 Stock_Market_Index=ts(Stock_Market_Index,frequency = 365,start = c(2000,1)) 
 
-print(head(Stock_Market_Index))
-
-plot(Stock_Market_Index,
-     col="red",
-     lwd=1,
-     main="stock_market_index",
-     type='l'
-     )
-
-
 #*Steps To Aplied Granger Causality********************************************** 
   
-
-#***** plot_test*****************************************************************
-
-
-plot(Inflation_Rate, 
-     main="Inflation_rate series",
-     col="red",
-     lwd=1
-     )  
-
-plot(Interest_Rate,
-     main="Interest_rate series",
-     col="blue",
-     lwd=1
-)  
 
 #****An other Method to plot  the time series***********************************
 par(mfrow = c(2,1))
 
-plot(Inflation_Rate,
+plot(Interest_Rate,
      col="red",
-     main="Inflation_rate series "
-     )
-plot(Exchange_Rate,col="blue",
-     main="Interest_rate series "
+     main="Interest_Rate series "
      )
 
-#***  ADF_test of  the two series ***********************************************
+#***************************ADF test of Inflation_rate**************************
 adf_interest=adf.test(Interest_Rate)
 print(adf_interest)
+
+#**************************Plot  of Exchange rate****************
+
+plot(Exchange_Rate,col="blue",
+     main="Exchange_Rate series "
+     )
+
+#***  ADF_test of Exchange _rate ***********************************************
 
 adf_Exchange_Rate=adf.test(Exchange_Rate)
 print(adf_Exchange_Rate)
@@ -82,7 +62,7 @@ print(adf_Exchange_Rate)
 #************* make the second  series stationary  on taking the diff (1)***********************
 
 Exchange_Rate_diff=diff(Exchange_Rate)
-print(head(Exchange_Rate_diff))
+
 print(adf.test(diff(Exchange_Rate)))
 
 
@@ -101,56 +81,26 @@ plot(Interest_Rate,col="blue",
 
 #****  Step_1:Selecting the Optimal Lag Length***********
 require(vars)
+
 data_diff <- data.frame(
   Exchange_Rate_diff = diff(data$Exchange_Rate),
-  Interest_Rate = (data$Interest)
+  Interest_Rate = data$Interest[-1]  # The [-1] drops the first row
 )
+
+print(head(data_diff))
+
+#***************VaR selected***********************************
 
 VARselect(data_diff,lag.max=10,type="const")
 print(VARselect(data_diff,lag.max=10,type="const"))
 
 
+
 #***************Var model*****************************************
-var_model=VAR(data_diff,p=5,type = "const")
+var_model=VAR(data_diff,p=1,type = "const")
 print(var_model)
 
 #****** Causlaity_test******************************************
 Causality_test=causality(var_model,cause ="Exchange_Rate_diff")
 Causality_test
-
-#======================================= COINTEGRATION LECTOR================
-
-
-#*********** Cointegration test*****************************************************
-#****** In this Time  we Applied different series : gdp_index  and Exchange_rate*****
-
-print(adf.test(gdp_index))
-print(adf.test(Exchange_Rate))
-
-
-# =====================================================
-# 3. تقدير الانحدار الأحادي (Single Equation)
-# ================================================
-
-Engle_granger_model <- lm((gdp_index) ~ (Exchange_Rate))
-summary(Engle_granger_model)
-# ============================
-# 4. استخراج البواقي (Residuals)
-# ============================
-residuals_eg <- (residuals(Engle_granger_model))
-print(head(residuals_eg))
-# ============================
-# 5. اختبار البواقي على الاستقرارية (ADF test)
-# ============================
-adf_residuals <- adf.test(residuals_eg)
-
-print(adf_residuals)
-# ============================
-# 6. التفسير
-# ============================
-if(adf_residuals$p.value < 0.05){
-  cat("Residuals are stationary → Cointegration exists (long-run equilibrium)\n")
-} else {
-  cat("Residuals are non-stationary → No cointegration\n")
-}
 
